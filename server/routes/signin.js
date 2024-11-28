@@ -20,27 +20,21 @@ router.post("/", async (req, res) => {
     return;
   }
 
-  let {
-    username,
-    password,
-    response_type,
-    client_id,
-    fingerprint,
-    redirect_uri,
-    response_mode,
-    scope,
-    state,
-    connection,
-  } = body_data;
+  let { username, password, client_id, fingerprint, scope } = body_data;
+
+  // Basic Check
 
   if (!username || !password || !client_id) {
     res.status(500).json({
       error: "Internal Server Error",
       message: `The required credentials were not provided.`,
+      detailed: `The required credentials were not provided.`,
       status: 500,
     });
     return;
   }
+
+  // Check Client ID
 
   try {
     db_client = await req.db
@@ -61,10 +55,13 @@ router.post("/", async (req, res) => {
     res.status(401).json({
       error: "Unauthorized",
       message: `The requested client_id : "${client_id}" is invalid.`,
+      detailed: `The requested client_id : "${client_id}" is invalid.`,
       status: 401,
     });
     return;
   }
+
+  // Check if User Exists
 
   let db_user = await req.db
     .db(db_client.client_name)
@@ -75,35 +72,30 @@ router.post("/", async (req, res) => {
     res.status(401).json({
       error: "Unauthorized",
       message: `The requested user : "${username}" does not exist.`,
+      detailed: `The requested user : "${username}" does not exist.`,
       status: 401,
     });
     return;
   }
 
-  try {
-    if (await argon2.verify(db_user.password, password)) {
-      res.status(200).json({
-        error: false,
-        message: "login success",
-        status: 200,
-        auth_token: "",
-        refresh_token: "",
-      });
-      return;
-    } else {
-      res.status(401).json({
-        error: "Unauthorized",
-        message: `The provided password was incorrect.`,
-        status: 401,
-      });
-      return;
-    }
-  } catch (err) {
-    res.status(500).json({
-      error: "Internal Server Error",
-      message: `Some error occured, please try again later.`,
-      detailed: err,
-      status: 500,
+  // Validate Password
+
+  if (await argon2.verify(db_user.password, password)) {
+    res.status(200).json({
+      error: false,
+      message: "login success",
+      status: 200,
+      auth_token: "",
+      refresh_token: "",
+      scope: scope,
+    });
+    return;
+  } else {
+    res.status(401).json({
+      error: "Unauthorized",
+      message: `The provided password was incorrect.`,
+      detailed: `The provided password was incorrect.`,
+      status: 401,
     });
     return;
   }
