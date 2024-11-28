@@ -113,12 +113,45 @@ router.post("/", async (req, res) => {
     return;
   }
 
+  // Check if User Exists
+
+  const db_user = await req.db
+    .db(db_client.client_name)
+    .collection("users")
+    .findOne({ username: username });
+
+  if (db_user != null) {
+    res.status(401).json({
+      error: "Unauthorized",
+      message: `The requested user : "${username}" already exists.`,
+      status: 401,
+    });
+    return;
+  }
+
   // OTP Validation
 
+  const otp_data = await req.db
+    .db(db_client.client_name)
+    .collection("otps")
+    .findOne({ username: username });
+
   if (!otp) {
-    const OTP = Math.floor(100000 + Math.random() * 900000);
+    const new_otp = Math.floor(100000 + Math.random() * 900000);
 
     // Ensure the OTP field has db.otps.createIndex( { "createdAt": 1 }, { expireAfterSeconds: 300 } ) already un while creation
+
+    if (otp_data == null) {
+      await req.db
+        .db(db_client.client_name)
+        .collection("otps")
+        .insertOne({ username: username, otp: new_otp });
+    } else {
+      await req.db
+        .db(db_client.client_name)
+        .collection("otps")
+        .findOneAndUpdate({ username: username }, { otp: new_otp });
+    }
 
     const emailSentData = await sendEmail(
       username,
@@ -127,7 +160,7 @@ router.post("/", async (req, res) => {
     
     Thank you for registering on ${db_client.client_name}.
     
-    Your One-Time Password (OTP) for completing the registration process is: ${OTP}
+    Your One-Time Password (OTP) for completing the registration process is: ${new_otp}
     
     Please enter this OTP within the next 10 minutes to verify your account. If you did not request this, please ignore this email.
     
@@ -157,58 +190,8 @@ router.post("/", async (req, res) => {
     }
   }
 
-  const db_user = await req.db
-    .db(db_client.client_name)
-    .collection("otps")
-    .insertOne({ username: username, otp: OTP });
-
-  if (db_user != null) {
-    res.status(401).json({
-      error: "Unauthorized",
-      message: `The requested user : "${username}" already exists.`,
-      status: 401,
-    });
-    return;
-  }
-
-  try {
-    const hash = await argon2.hash(password);
-  } catch (err) {
-    res.status(500).json({
-      error: "Internal Server Error",
-      message: `Some error occured, please try again later.`,
-      detailed: err,
-      status: 500,
-    });
-    return;
-  }
-
-  try {
-    if (await argon2.verify(db_user.password, password)) {
-      res.status(200).json({
-        error: false,
-        message: "login success",
-        status: 200,
-        auth_token: "",
-        refresh_token: "",
-      });
-      return;
-    } else {
-      res.status(401).json({
-        error: "Unauthorized",
-        message: `The provided password was incorrect.`,
-        status: 401,
-      });
-      return;
-    }
-  } catch (err) {
-    res.status(500).json({
-      error: "Internal Server Error",
-      message: `Some error occured, please try again later.`,
-      detailed: err,
-      status: 500,
-    });
-    return;
+  if (otp_data.otp == otp) {
+  } else {
   }
 });
 
