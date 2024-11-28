@@ -7,7 +7,7 @@ export default function Home() {
   const [product, setProducts] = useState("Hi");
   useEffect(() => {
     const getProducts = async () => {
-      const data = await fetch("http://localhost:1234/signup", {
+      const data = await fetch("http://localhost:1234/authorize", {
         method: "POST",
       }).then((e) => {
         return e.text();
