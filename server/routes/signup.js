@@ -29,13 +29,8 @@ router.post("/", async (req, res) => {
     password,
     confirm_password,
     otp,
-    response_type,
-    fingerprint,
-    redirect_uri,
-    response_mode,
     scope,
-    state,
-    connection,
+    fingerprint,
   } = body_data;
 
   // Basic Check
@@ -44,6 +39,7 @@ router.post("/", async (req, res) => {
     res.status(500).json({
       error: "Internal Server Error",
       message: `The required credentials were not provided.`,
+      detailed: `The required credentials were not provided.`,
       status: 500,
     });
     return;
@@ -70,6 +66,7 @@ router.post("/", async (req, res) => {
     res.status(401).json({
       error: "Unauthorized",
       message: `The requested client_id : "${client_id}" is invalid.`,
+      detailed: `The requested client_id : "${client_id}" is invalid.`,
       status: 401,
     });
     return;
@@ -124,6 +121,7 @@ router.post("/", async (req, res) => {
     res.status(401).json({
       error: "Unauthorized",
       message: `The requested user : "${username}" already exists.`,
+      detailed: `The requested user : "${username}" already exists.`,
       status: 401,
     });
     return;
@@ -191,7 +189,29 @@ router.post("/", async (req, res) => {
   }
 
   if (otp_data.otp == otp) {
+    await req.db.db(db_client.client_name).collection("users").insertOne({
+      username: username,
+      email: username,
+      password: password,
+      dateCreated: new Date(),
+    });
+    res.status(200).json({
+      error: false,
+      message: "registeration success",
+      status: 200,
+      auth_token: "",
+      refresh_token: "",
+      scope: scope,
+    });
+    return;
   } else {
+    res.status(401).json({
+      error: "Unauthorized",
+      message: `The provided OTP is wrong.`,
+      detailed: `The provided OTP is wrong.`,
+      status: 401,
+    });
+    return;
   }
 });
 
