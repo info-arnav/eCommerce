@@ -7,4 +7,5 @@ export default async function createCookie(key, value) {
     httpOnly: true,
     path: "/",
   });
+  return;
 }

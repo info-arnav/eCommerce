@@ -1,3 +1,9 @@
+"use client";
+
+import { useContext } from "react";
+import AuthContext from "./authProvider";
+
 export default function Navigation() {
-  return <nav></nav>;
+  const { authToken } = useContext(AuthContext);
+  return <nav>{authToken}</nav>;
 }

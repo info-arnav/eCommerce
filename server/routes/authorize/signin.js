@@ -20,7 +20,7 @@ router.post("/", async (req, res) => {
     return;
   }
 
-  let { username, password, client_id, fingerprint, scope } = body_data;
+  let { username, password, client_id, scope, redirect_uri } = body_data;
 
   // Basic Check
 
@@ -80,17 +80,7 @@ router.post("/", async (req, res) => {
 
   // Validate Password
 
-  if (await argon2.verify(db_user.password, password)) {
-    res.status(200).json({
-      error: false,
-      message: "login success",
-      status: 200,
-      auth_token: "",
-      refresh_token: "",
-      scope: scope,
-    });
-    return;
-  } else {
+  if (!(await argon2.verify(db_user.password, password))) {
     res.status(401).json({
       error: "Unauthorized",
       message: `The provided password was incorrect.`,
@@ -99,6 +89,57 @@ router.post("/", async (req, res) => {
     });
     return;
   }
+
+  // Authorization Code
+
+  // Ensure the following config is set : db.session_ids.createIndex( { "createdAt": 1 }, { expireAfterSeconds: 60 } )
+
+  const session_data = await req.db
+    .db(db_client.client_name)
+    .collection("session_ids")
+    .insertOne({
+      fingerprint: req.fingerprint,
+      username: username,
+      ip: req.ip,
+      scope: scope,
+      dateCreated: new Date(),
+    });
+
+  auth_code_data.insertedId = JSON.stringify(session_data.insertedId);
+
+  // Token
+
+  const accesss_code_data = fetch(`${process.env.URL}/token`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      grant_type: "auth_code",
+      auth_code: auth_code_data.insertedId,
+      fingerprint: req.fingerprint,
+      client_id: client_id,
+      username: username,
+      scope: scope,
+    }),
+  });
+
+  // Final Response
+
+  res.set("Authorization", `Bearer ${accesss_code_data.access_code}`);
+
+  res.status(200).json({
+    error: false,
+    message: "login success",
+    detailed: "login sucess",
+    status: 200,
+    expires_in: 3600,
+    refresh_token: "",
+    token_type: "bearer",
+    scope: scope,
+    redirect_uri: redirect_uri,
+  });
+  return;
 });
 
 module.exports = router;
