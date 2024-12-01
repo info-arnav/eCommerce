@@ -2,8 +2,9 @@
 const express = require("express");
 require("dotenv").config();
 var cors = require("cors");
-const signup = require("./routes/signup");
-const signin = require("./routes/signin");
+const signup = require("./routes/authorize/signup");
+const signin = require("./routes/authorize/signin");
+const track = require("./routes/track");
 const authorize = require("./routes/authorize");
 const token = require("./routes/token");
 const mongo = require("./db/mongo");
@@ -20,6 +21,13 @@ app.use(express.urlencoded());
 // Database
 app.use(mongo);
 
+// Client Details
+app.use((req, res, next) => {
+  req.ip = req.socket.remoteAddress;
+  req.fingerprint = "fingerprint"; // req.headers["x-forwarded-for"]
+  next();
+});
+
 // only POST method support added
 app.all("*", (req, res, next) => {
   if (req.method !== "POST") {
@@ -34,8 +42,9 @@ app.all("*", (req, res, next) => {
 });
 
 // All Routes
-app.use("/signup", signup);
-app.use("/signin", signin);
+app.use("/authorize/signup", signup);
+app.use("/authorize/signin", signin);
+app.use("/track", track);
 app.use("/authorize", authorize);
 app.use("/oauth/token", token);
 

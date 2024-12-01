@@ -1,9 +1,9 @@
 const express = require("express");
 const argon2 = require("argon2");
 const { ObjectId } = require("mongodb");
-const validatePassword = require("../components/validatePassword");
-const validateEmail = require("../components/validateEmail");
-const sendEmail = require("../components/sendEmail");
+const validatePassword = require("../../components/validatePassword");
+const validateEmail = require("../../components/validateEmail");
+const sendEmail = require("../../components/sendEmail");
 
 const router = express.Router();
 
@@ -23,15 +23,8 @@ router.post("/", async (req, res) => {
     return;
   }
 
-  const {
-    client_id,
-    username,
-    password,
-    confirm_password,
-    otp,
-    scope,
-    fingerprint,
-  } = body_data;
+  const { client_id, username, password, confirm_password, otp, scope } =
+    body_data;
 
   // Basic Check
 
@@ -129,27 +122,19 @@ router.post("/", async (req, res) => {
 
   // OTP Validation
 
-  const otp_data = await req.db
-    .db(db_client.client_name)
-    .collection("otps")
-    .findOne({ username: username });
-
   if (!otp) {
     const new_otp = Math.floor(100000 + Math.random() * 900000);
 
     // Ensure the OTP field has db.otps.createIndex( { "createdAt": 1 }, { expireAfterSeconds: 300 } ) already un while creation
 
-    if (otp_data == null) {
-      await req.db
-        .db(db_client.client_name)
-        .collection("otps")
-        .insertOne({ username: username, otp: new_otp });
-    } else {
-      await req.db
-        .db(db_client.client_name)
-        .collection("otps")
-        .findOneAndUpdate({ username: username }, { otp: new_otp });
-    }
+    await req.db
+      .db(db_client.client_name)
+      .collection("otps")
+      .findOneAndUpdate(
+        { username: username },
+        { $set: { otp: new_otp } },
+        { upsert: true }
+      );
 
     const emailSentData = await sendEmail(
       username,
@@ -188,23 +173,12 @@ router.post("/", async (req, res) => {
     }
   }
 
-  if (otp_data.otp == otp) {
-    await req.db.db(db_client.client_name).collection("users").insertOne({
-      username: username,
-      email: username,
-      password: password,
-      dateCreated: new Date(),
-    });
-    res.status(200).json({
-      error: false,
-      message: "registeration success",
-      status: 200,
-      auth_token: "",
-      refresh_token: "",
-      scope: scope,
-    });
-    return;
-  } else {
+  const otp_data = await req.db
+    .db(db_client.client_name)
+    .collection("otps")
+    .findOne({ username: username });
+
+  if (otp_data.otp != otp) {
     res.status(401).json({
       error: "Unauthorized",
       message: `The provided OTP is wrong.`,
@@ -213,6 +187,27 @@ router.post("/", async (req, res) => {
     });
     return;
   }
+
+  // Create User
+
+  const hash = argon2.hash(password);
+
+  await req.db.db(db_client.client_name).collection("users").insertOne({
+    username: username,
+    email: username,
+    password: hash,
+    dateCreated: new Date(),
+  });
+
+  res.status(200).json({
+    error: false,
+    message: "registeration success",
+    status: 200,
+    auth_token: "",
+    refresh_token: "",
+    scope: scope,
+  });
+  return;
 });
 
 module.exports = router;
