@@ -8,6 +8,7 @@ const track = require("./routes/track");
 const authorize = require("./routes/authorize");
 const token = require("./routes/token");
 const mongo = require("./db/mongo");
+const getFingerprint = require("./components/getFingerprint");
 
 // Routes
 const app = express();
@@ -22,9 +23,9 @@ app.use(express.urlencoded());
 app.use(mongo);
 
 // Client Details
-app.use((req, res, next) => {
-  req.ip = req.socket.remoteAddress;
-  req.fingerprint = "fingerprint"; // req.headers["x-forwarded-for"]
+app.use(async (req, res, next) => {
+  req.ip = req.socket.remoteAddress; // req.headers["x-forwarded-for"]
+  req.fingerprint = await getFingerprint(req);
   next();
 });
 
