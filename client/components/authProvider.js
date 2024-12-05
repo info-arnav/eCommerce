@@ -4,6 +4,7 @@ import { createContext, useEffect, useState } from "react";
 import createCookie from "./server/createCookie";
 import getClientId from "./server/getClientId";
 import getCookie from "./server/getCookie";
+import generateFingerPrint from "./getFingerprint";
 
 const AuthContext = createContext();
 
@@ -11,6 +12,24 @@ export function AuthProvider({ children }) {
   const [authToken, setAuthToken] = useState("hi");
   const [refreshToken, setRefreshToken] = useState(null);
   const [trackId, setTrackId] = useState(null);
+  const [hash, setHash] = useState(null);
+
+  // Generate Hash
+
+  useEffect(() => {
+    setHash(generateFingerPrint());
+  }, []);
+
+  // Define Fetch
+
+  function Fetch(url, headers) {
+    if ("body" in headers) {
+      headers.body = JSON.parse(headers.body);
+      headers.body.fingerprint = hash;
+      headers.body = JSON.stringify(headers.body);
+    }
+    return fetch(url, headers);
+  }
 
   // Establish track id
 
@@ -21,7 +40,7 @@ export function AuthProvider({ children }) {
         setTrackId(cookie_track_id);
         return;
       }
-      const response = await fetch("http://localhost:1234/track", {
+      const response = await Fetch("http://localhost:1234/track", {
         method: "POST",
         "Content-Type": "application/json",
         body: JSON.stringify({
@@ -42,7 +61,7 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const updateSession = async () => {
-      await fetch("http://localhost:1234/track", {
+      await Fetch("http://localhost:1234/track", {
         method: "POST",
         "Content-Type": "application/json",
         body: JSON.stringify({
@@ -77,7 +96,9 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ authToken, setAuthToken, refreshToken }}>
+    <AuthContext.Provider
+      value={{ authToken, setAuthToken, refreshToken, Fetch }}
+    >
       {children}
     </AuthContext.Provider>
   );

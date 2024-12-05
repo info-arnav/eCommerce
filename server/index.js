@@ -22,6 +22,26 @@ app.use(express.urlencoded());
 // Database
 app.use(mongo);
 
+// Body Parsing
+app.use((req, res, next) => {
+  let body_data;
+  try {
+    body_data = JSON.parse(req.body);
+  } catch (err) {
+    res.status(500).json({
+      error: "Internal Server Error",
+      message: `The POST request body was invalid`,
+      detailed: err,
+      status: 500,
+    });
+    return;
+  }
+  const { fingerprint } = body_data;
+  req.body_data = body_data;
+  req.client_fingerprint = fingerprint;
+  next();
+});
+
 // Client Details
 app.use(async (req, res, next) => {
   req.ip = req.socket.remoteAddress; // req.headers["x-forwarded-for"]

@@ -5,21 +5,8 @@ const router = express.Router();
 
 router.post("/", async (req, res) => {
   let db_client;
-  let body_data;
 
-  try {
-    body_data = JSON.parse(req.body);
-  } catch (err) {
-    res.status(500).json({
-      error: "Internal Server Error",
-      message: `The POST request body was invalid`,
-      detailed: err,
-      status: 500,
-    });
-    return;
-  }
-
-  const { client_id, method, user_track_id, path } = body_data;
+  const { client_id, method, user_track_id, path } = req.body_data;
 
   // Check Client ID
 

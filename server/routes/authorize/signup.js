@@ -8,23 +8,10 @@ const sendEmail = require("../../components/sendEmail");
 const router = express.Router();
 
 router.post("/", async (req, res) => {
-  let body_data;
   let db_client;
 
-  try {
-    body_data = JSON.parse(req.body);
-  } catch (err) {
-    res.status(500).json({
-      error: "Internal Server Error",
-      message: `The POST request body was invalid`,
-      detailed: err,
-      status: 500,
-    });
-    return;
-  }
-
   const { client_id, username, password, confirm_password, otp, scope } =
-    body_data;
+    req.body_data;
 
   // Basic Check
 

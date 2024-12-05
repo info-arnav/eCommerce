@@ -5,22 +5,9 @@ const { ObjectId } = require("mongodb");
 const router = express.Router();
 
 router.post("/", async (req, res) => {
-  let body_data;
   let db_client;
 
-  try {
-    body_data = JSON.parse(req.body);
-  } catch (err) {
-    res.status(500).json({
-      error: "Internal Server Error",
-      message: `The POST request body was invalid`,
-      detailed: err,
-      status: 500,
-    });
-    return;
-  }
-
-  let { username, password, client_id, scope, redirect_uri } = body_data;
+  let { username, password, client_id, scope, redirect_uri } = req.body_data;
 
   // Basic Check
 
