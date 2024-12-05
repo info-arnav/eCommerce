@@ -12,12 +12,12 @@ export function AuthProvider({ children }) {
   const [authToken, setAuthToken] = useState("hi");
   const [refreshToken, setRefreshToken] = useState(null);
   const [trackId, setTrackId] = useState(null);
-  const [hash, setHash] = useState(null);
+  const [fingerprint, setFingerprint] = useState(null);
 
-  // Generate Hash
+  // Generate Fingerprint
 
   useEffect(() => {
-    setHash(generateFingerPrint());
+    setFingerprint(generateFingerPrint());
   }, []);
 
   // Define Fetch
@@ -25,7 +25,7 @@ export function AuthProvider({ children }) {
   function Fetch(url, headers) {
     if ("body" in headers) {
       headers.body = JSON.parse(headers.body);
-      headers.body.fingerprint = hash;
+      headers.body.fingerprint = fingerprint;
       headers.body = JSON.stringify(headers.body);
     }
     return fetch(url, headers);
