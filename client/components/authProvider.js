@@ -75,8 +75,6 @@ export function AuthProvider({ children }) {
 
   // Remove track id
 
-  // TODO : make this synchronous
-
   useEffect(() => {
     const handleBeforeUnload = async (event) => {
       navigator.sendBeacon(
