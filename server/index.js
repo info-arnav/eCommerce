@@ -9,6 +9,7 @@ const authorize = require("./routes/authorize");
 const token = require("./routes/token");
 const mongo = require("./db/mongo");
 const getFingerprint = require("./components/getFingerprint");
+const decode = require("./components/decoder");
 
 // Routes
 const app = express();
@@ -23,7 +24,7 @@ app.use(express.urlencoded());
 app.use(mongo);
 
 // Body Parsing
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
   let body_data;
   try {
     body_data = JSON.parse(req.body);
@@ -36,9 +37,41 @@ app.use((req, res, next) => {
     });
     return;
   }
+
   const { fingerprint } = body_data;
+
   req.body_data = body_data;
-  req.client_fingerprint = fingerprint;
+  try {
+    req.client_fingerprint = await decode(
+      fingerprint.encryptedData,
+      process.env.FINGERPRINT_SECRET,
+      fingerprint.iv
+    );
+  } catch (err) {
+    res.status(500).json({
+      error: "Internal Server Error",
+      message: `The POST request body was invalid`,
+      detailed: err,
+      status: 500,
+    });
+    return;
+  }
+
+  if (req.path == "/track" && req.body_data.method == "end") {
+    next();
+    return;
+  }
+
+  if (req.client_fingerprint.expiry > new Date()) {
+    res.status(500).json({
+      error: "Unauthorized",
+      message: `The request has expired.`,
+      detailed: `The request has expired.`,
+      status: 500,
+    });
+    return;
+  }
+
   next();
 });
 

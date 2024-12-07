@@ -1,4 +1,9 @@
-function canvasFingerprint() {
+import getFingerprintSecret from "./server/getFingerprintSecret";
+import encode from "./encoder";
+
+// Generators
+
+async function canvasFingerprint() {
   const canvas = document.createElement("canvas");
 
   canvas.id = "tracker-canvas";
@@ -171,6 +176,17 @@ function canvasFingerprint() {
   return hash;
 }
 
-export default function generateFingerPrint() {
-  return canvasFingerprint();
+export default async function generateFingerPrint() {
+  let expiry = new Date();
+  expiry.setMinutes(expiry.getMinutes() + 2);
+  let fingerprint = encode(
+    {
+      canvasFingerPrint: await canvasFingerprint(),
+      createDate: expiry,
+      expiry: expiry,
+      random: Math.floor(1000000000 + Math.random() * 9000000000),
+    },
+    await getFingerprintSecret()
+  );
+  return await fingerprint;
 }

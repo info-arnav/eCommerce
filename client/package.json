@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "crypto": "^1.0.1",
     "dotenv": "^16.4.5",
     "next": "15.0.3",
     "react": "19.0.0-rc-66855b96-20241106",

@@ -12,20 +12,13 @@ export function AuthProvider({ children }) {
   const [authToken, setAuthToken] = useState("hi");
   const [refreshToken, setRefreshToken] = useState(null);
   const [trackId, setTrackId] = useState(null);
-  const [fingerprint, setFingerprint] = useState(null);
-
-  // Generate Fingerprint
-
-  useEffect(() => {
-    setFingerprint(generateFingerPrint());
-  }, []);
 
   // Define Fetch
 
-  function Fetch(url, headers) {
+  async function Fetch(url, headers) {
     if ("body" in headers) {
       headers.body = JSON.parse(headers.body);
-      headers.body.fingerprint = fingerprint;
+      headers.body.fingerprint = await generateFingerPrint();
       headers.body = JSON.stringify(headers.body);
     }
     return fetch(url, headers);
@@ -79,6 +72,8 @@ export function AuthProvider({ children }) {
 
   // Remove track id
 
+  //TODO : make this synchronous
+
   useEffect(() => {
     const handleBeforeUnload = async (event) => {
       navigator.sendBeacon(
@@ -86,6 +81,7 @@ export function AuthProvider({ children }) {
         JSON.stringify({
           client_id: await getClientId(),
           method: "end",
+          fingerprint: await generateFingerPrint(),
         })
       );
     };
