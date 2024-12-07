@@ -1,10 +1,11 @@
 "use client";
 
-import { createContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import createCookie from "./server/createCookie";
 import getClientId from "./server/getClientId";
 import getCookie from "./server/getCookie";
 import generateFingerPrint from "./getFingerprint";
+import CacheContext from "./cache";
 
 const AuthContext = createContext();
 
@@ -12,6 +13,8 @@ export function AuthProvider({ children }) {
   const [authToken, setAuthToken] = useState("hi");
   const [refreshToken, setRefreshToken] = useState(null);
   const [trackId, setTrackId] = useState(null);
+
+  const { cachedClientId, cachedFingerPrint } = useContext(CacheContext);
 
   // Define Fetch
 
@@ -72,24 +75,28 @@ export function AuthProvider({ children }) {
 
   // Remove track id
 
-  //TODO : make this synchronous
+  // TODO : make this synchronous
 
   useEffect(() => {
     const handleBeforeUnload = async (event) => {
       navigator.sendBeacon(
         `http://localhost:1234/track`,
         JSON.stringify({
-          client_id: await getClientId(),
+          client_id: cachedClientId,
           method: "end",
-          fingerprint: await generateFingerPrint(),
+          fingerprint: cachedFingerPrint,
         })
       );
     };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, []);
+    if (cachedFingerPrint != null && cachedClientId != null) {
+      console.log({
+        client_id: cachedClientId,
+        method: "end",
+        fingerprint: cachedFingerPrint,
+      });
+      window.addEventListener("beforeunload", handleBeforeUnload);
+    }
+  }, [cachedFingerPrint, cachedClientId]);
 
   return (
     <AuthContext.Provider

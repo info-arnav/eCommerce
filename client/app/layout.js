@@ -1,3 +1,4 @@
+import { ClientCache } from "@/components/cache";
 import "./globals.css";
 import { AuthProvider } from "@/components/authProvider";
 import Footer from "@/components/footer";
@@ -17,11 +18,13 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <AuthProvider>
-          <Navigation></Navigation>
-          {children}
-          <Footer></Footer>
-        </AuthProvider>
+        <ClientCache>
+          <AuthProvider>
+            <Navigation></Navigation>
+            {children}
+            <Footer></Footer>
+          </AuthProvider>
+        </ClientCache>
       </body>
     </html>
   );
