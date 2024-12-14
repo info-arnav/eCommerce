@@ -3,7 +3,11 @@ import encode from "./encoder";
 
 // Generators
 
-async function canvasFingerprint() {
+export async function canvasFingerprint(params) {
+  if (params && params.cachedCanvasFingerPrint != null) {
+    return params.cachedCanvasFingerPrint;
+  }
+
   const canvas = document.createElement("canvas");
 
   canvas.id = "tracker-canvas";
@@ -176,12 +180,12 @@ async function canvasFingerprint() {
   return hash;
 }
 
-export default async function generateFingerPrint() {
+export default async function generateFingerPrint(params) {
   let expiry = new Date();
   expiry.setMinutes(expiry.getMinutes() + 2);
   let fingerprint = encode(
     {
-      canvasFingerPrint: await canvasFingerprint(),
+      canvasFingerPrint: await canvasFingerprint(params),
       createDate: expiry,
       expiry: expiry,
       random: Math.floor(1000000000 + Math.random() * 9000000000),

@@ -14,14 +14,20 @@ export function AuthProvider({ children }) {
   const [refreshToken, setRefreshToken] = useState(null);
   const [trackId, setTrackId] = useState(null);
 
-  const { cachedClientId, cachedFingerPrint } = useContext(CacheContext);
+  const { cachedClientId, cachedFingerPrint, cachedCanvasFingerPrint } =
+    useContext(CacheContext);
+
+  const cachedGenerateFingerprint = async (params = {}) => {
+    params.cachedCanvasFingerPrint = cachedCanvasFingerPrint;
+    return await generateFingerPrint(params);
+  };
 
   // Define Fetch
 
   async function Fetch(url, headers) {
     if ("body" in headers) {
       headers.body = JSON.parse(headers.body);
-      headers.body.fingerprint = await generateFingerPrint();
+      headers.body.fingerprint = await cachedGenerateFingerprint();
       headers.body = JSON.stringify(headers.body);
     }
     return fetch(url, headers);
@@ -87,11 +93,6 @@ export function AuthProvider({ children }) {
       );
     };
     if (cachedFingerPrint != null && cachedClientId != null) {
-      console.log({
-        client_id: cachedClientId,
-        method: "end",
-        fingerprint: cachedFingerPrint,
-      });
       window.addEventListener("beforeunload", handleBeforeUnload);
     }
   }, [cachedFingerPrint, cachedClientId]);

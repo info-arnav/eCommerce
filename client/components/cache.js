@@ -2,13 +2,14 @@
 
 import { createContext, useEffect, useState } from "react";
 import getClientId from "./server/getClientId";
-import generateFingerPrint from "./getFingerprint";
+import generateFingerPrint, { canvasFingerprint } from "./getFingerprint";
 
 const CacheContext = createContext();
 
 export function ClientCache({ children }) {
   const [cachedClientId, setCachedClientId] = useState(null);
   const [cachedFingerPrint, setCachedFingerPrint] = useState(null);
+  const [cachedCanvasFingerPrint, setCachedCanvasFingerprint] = useState(null);
 
   useEffect(() => {
     const callClientId = async () => {
@@ -19,12 +20,26 @@ export function ClientCache({ children }) {
       const print = await generateFingerPrint();
       setCachedFingerPrint(print);
     };
+    const callCanvasFingerPrint = async () => {
+      const canvasPrint = await canvasFingerprint({
+        cachedCanvasFingerPrint: cachedCanvasFingerPrint,
+      });
+      setCachedCanvasFingerprint(canvasPrint);
+    };
     callClientId();
     callFingerPrint();
+    callCanvasFingerPrint();
   }, []);
 
   return (
-    <CacheContext.Provider value={{ cachedClientId, cachedFingerPrint }}>
+    <CacheContext.Provider
+      value={{
+        cachedClientId,
+        cachedFingerPrint,
+        cachedCanvasFingerPrint,
+        setCachedCanvasFingerprint,
+      }}
+    >
       {children}
     </CacheContext.Provider>
   );
