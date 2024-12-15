@@ -1,6 +1,6 @@
-# E-commerce Base Application
+# Dummy Base Application
 
-This is a high-security base for creating any e-commerce application. It includes essential features such as an integrated payment gateway, a secure backend, SEO optimization, and a fully connected database.
+This is a dummy application which can be reffered to make any new websites really easily by referring to pre implemented concepts.
 
 The project is split into two primary sections:
 
